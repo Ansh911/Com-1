@@ -1,0 +1,110 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. Create Salary Dataset (with missing values)
+
+data = {
+    "Employee": ["A", "B", "C", "D", "E", "F"],
+    "Salary": [45000, 52000, np.nan, 61000, 57000, 49000],
+    "Experience": [2, 3, np.nan, 5, 4, 2]
+}
+df = pd.DataFrame(data)
+print("Dataset:\n", df)
+
+# 2. Missing Value Detection
+print("\nMissing Values:\n", df.isnull().sum())
+
+# 3. Mean Salary (ignores NaN)
+mean_salary = df["Salary"].mean()
+print("\nMean Salary:", mean_salary)
+
+# Fill missing values ONLY for plotting
+plot_df = df.copy()
+plot_df["Salary"] = plot_df["Salary"].fillna(plot_df["Salary"].mean())
+plot_df["Experience"] = plot_df["Experience"].fillna(plot_df["Experience"].mean())
+
+# 4. HISTOGRAM (with labels)
+plt.figure(figsize=(6,4))
+plt.hist(plot_df["Salary"], bins=5, edgecolor="black")
+plt.title("Salary Distribution (Histogram)")
+plt.xlabel("Salary")
+plt.ylabel("Number of Employees")
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.show()
+
+# 5. BAR PLOT (with value labels)
+plt.figure(figsize=(6,4))
+bars = plt.bar(plot_df["Employee"], plot_df["Salary"], edgecolor="black")
+plt.title("Employee vs Salary (Bar Chart)")
+plt.xlabel("Employee")
+plt.ylabel("Salary")
+plt.grid(axis="y", linestyle="--", alpha=0.4)
+
+# Add data labels on bars
+for bar in bars:
+    plt.text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + 500,
+        f"{int(bar.get_height())}",
+        ha="center"
+    )
+plt.show()
+
+# 6. SCATTER PLOT (with point labels)
+
+plt.figure(figsize=(6,4))
+plt.scatter(plot_df["Experience"], plot_df["Salary"], color="blue")
+plt.title("Experience vs Salary (Scatter Plot)")
+plt.xlabel("Experience (Years)")
+plt.ylabel("Salary")
+
+# Label each point with employee name
+for i in range(len(plot_df)):
+    plt.text(plot_df["Experience"][i] + 0.05,
+             plot_df["Salary"][i],
+             plot_df["Employee"][i])
+
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.show()
+
+# 7. SUBPLOTS (all fully labeled)
+
+fig, axs = plt.subplots(3, 1, figsize=(7,10))
+
+# Subplot 1: Histogram
+axs[0].hist(plot_df["Salary"], bins=5, edgecolor="black")
+axs[0].set_title("Salary Histogram")
+axs[0].set_xlabel("Salary")
+axs[0].set_ylabel("Frequency")
+axs[0].grid(True, linestyle="--", alpha=0.5)
+
+# Subplot 2: Bar Chart
+bars = axs[1].bar(plot_df["Employee"], plot_df["Salary"], edgecolor="black")
+axs[1].set_title("Employee vs Salary")
+axs[1].set_xlabel("Employee")
+axs[1].set_ylabel("Salary")
+axs[1].grid(axis="y", linestyle="--", alpha=0.4)
+
+# Add value labels
+for bar in bars:
+    axs[1].text(bar.get_x() + bar.get_width()/2,
+                bar.get_height() + 500,
+                f"{int(bar.get_height())}",
+                ha="center")
+
+# Subplot 3: Scatter Plot
+axs[2].scatter(plot_df["Experience"], plot_df["Salary"])
+axs[2].set_title("Experience vs Salary")
+axs[2].set_xlabel("Experience")
+axs[2].set_ylabel("Salary")
+axs[2].grid(True, linestyle="--", alpha=0.4)
+
+# Add labels to each point
+for i in range(len(plot_df)):
+    axs[2].text(plot_df["Experience"][i] + 0.05,
+                plot_df["Salary"][i],
+                plot_df["Employee"][i])
+
+plt.tight_layout()
+plt.show()
