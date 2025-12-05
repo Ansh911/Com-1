@@ -1,0 +1,90 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from google.colab import files
+from google.colab.patches import cv2_imshow
+
+# Upload & Read Image 
+
+uploaded = files.upload()
+img_path = list(uploaded.keys())[0]
+img = cv2.imread(img_path)
+
+if img is None:
+    raise ValueError("Error: Could not read the uploaded image.")
+
+rows, cols = img.shape[:2]
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+# Show original
+plt.figure(figsize=(6,5))
+plt.imshow(img_rgb)
+plt.title("Original Image")
+plt.axis("off")
+plt.show()
+
+img_f = img.astype(np.float32)
+
+# ======================================================
+#  PART 1 — GEOMETRIC TRANSFORMATIONS
+# ======================================================
+
+# 1. Translation
+M_translate = np.float32([[1, 0, 60], [0, 1, 40]])
+translated = cv2.warpAffine(img, M_translate, (cols, rows))
+
+# 2. Rotation
+M_rotate = cv2.getRotationMatrix2D((cols/2, rows/2), 45, 1)
+rotated = cv2.warpAffine(img, M_rotate, (cols, rows))
+
+# 3. Scaling
+scaled = cv2.resize(img, None, fx=0.5, fy=0.5)
+
+# 4. Flipping
+flip_h = cv2.flip(img, 1)
+flip_v = cv2.flip(img, 0)
+flip_both = cv2.flip(img, -1)
+
+#  PART 2 — INTENSITY (PIXEL) TRANSFORMATIONS
+
+# 1. Log Transform
+
+log_f = np.log1p(img_f)
+log_img = ((log_f / log_f.max()) * 255).astype(np.uint8)
+
+# 2. Negative
+negative_img = 255 - img
+
+# 3. Gamma Transform
+gamma = 0.5
+img_norm = img_f / 255.0
+gamma_img = np.clip((img_norm ** gamma) * 255, 0, 255).astype(np.uint8)
+
+# ======================================================
+#  DISPLAY ALL RESULTS IN A CLEAN GRID (MATPLOTLIB)
+# ======================================================
+
+def show(img_bgr, title, pos, total=12):
+    plt.subplot(3, 4, pos)
+    plt.imshow(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+    plt.title(title)
+    plt.axis("off")
+
+plt.figure(figsize=(16, 12))
+
+# Geometric
+show(img, "Original", 1)
+show(translated, "Translated", 2)
+show(rotated, "Rotated 45°", 3)
+show(scaled, "Scaled 50%", 4)
+show(flip_h, "Flip Horizontal", 5)
+show(flip_v, "Flip Vertical", 6)
+show(flip_both, "Flip Both", 7)
+
+# Intensity
+show(log_img, "Log Transform", 8)
+show(negative_img, "Negative", 9)
+show(gamma_img, f"Gamma Transform (γ={gamma})", 10)
+
+plt.tight_layout()
+plt.show()
