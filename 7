@@ -1,141 +1,57 @@
-# ---------------------------
-# 1. Upload ZIP file
-# ---------------------------
-from google.colab import files
-uploaded = files.upload()
-
-import zipfile
-import os
-
-zip_path = next(iter(uploaded))  # get uploaded filename
-
-with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    zip_ref.extractall("dataset")
-
-# ---------------------------
-# 2. Load Dataset
-# ---------------------------
 import tensorflow as tf
-import pathlib
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report, roc_curve, auc
 
-data_dir = pathlib.Path("dataset")   # folder containing class folders
-img_size = (150, 150)
-batch_size = 32
+# -------------------- LOAD + PREPROCESS --------------------
+def load_data():
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
-train_ds = tf.keras.utils.image_dataset_from_directory(
-    data_dir,
-    validation_split=0.2,
-    subset="training",
-    seed=123,
-    image_size=img_size,
-    batch_size=batch_size
-)
+    # Cat = 3, Dog = 5
+    def filter_classes(x, y):
+        mask = (y.flatten() == 3) | (y.flatten() == 5)
+        x, y = x[mask], y[mask]
+        y = (y == 5).astype(int)   # Dog = 1, Cat = 0
+        return x / 255.0, y
 
-val_ds = tf.keras.utils.image_dataset_from_directory(
-    data_dir,
-    validation_split=0.2,
-    subset="validation",
-    seed=123,
-    image_size=img_size,
-    batch_size=batch_size
-)
+    return *filter_classes(x_train, y_train), *filter_classes(x_test, y_test)
 
-# ---------------------------
-# 3. Build CNN Model
-# ---------------------------
-from tensorflow.keras import layers, models
+x_train, y_train, x_test, y_test = load_data()
 
-model = models.Sequential([
-    layers.Rescaling(1./255, input_shape=(150,150,3)),
-
-    layers.Conv2D(32, (3,3), activation='relu'),
-    layers.MaxPooling2D(),
-
-    layers.Conv2D(64, (3,3), activation='relu'),
-    layers.MaxPooling2D(),
-
-    layers.Conv2D(128, (3,3), activation='relu'),
-    layers.MaxPooling2D(),
-
-    layers.Flatten(),
-    layers.Dense(128, activation='relu'),
-    layers.Dropout(0.5),
-
-    layers.Dense(1, activation='sigmoid')  # binary classification
+# -------------------- MODEL --------------------
+model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, 3, activation='relu', padding='same', input_shape=x_train.shape[1:]),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Conv2D(64, 3, activation='relu', padding='same'),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Conv2D(128, 3, activation='relu', padding='same'),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
-model.compile(
-    optimizer='adam',
-    loss='binary_crossentropy',
-    metrics=['accuracy']
-)
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-model.summary()
+# -------------------- TRAIN --------------------
+history = model.fit(x_train, y_train, epochs=10, batch_size=64,
+                    validation_data=(x_test, y_test))
 
-# ---------------------------
-# 4. Train Model
-# ---------------------------
-history = model.fit(
-    train_ds,
-    epochs=10,
-    validation_data=val_ds
-)
+# -------------------- PREDICT --------------------
+y_proba = model.predict(x_test)
+y_pred = (y_proba > 0.5).astype(int)
 
-# ---------------------------
-# 5. Evaluate
-# ---------------------------
-loss, acc = model.evaluate(val_ds)
-print(f"Validation accuracy: {acc:.3f}")
+# -------------------- REPORT --------------------
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred, target_names=['Cat', 'Dog']))
 
-# ---------------------------
-# 6. Predictions for metrics
-# ---------------------------
-import numpy as np
-
-y_true = []
-y_pred = []
-
-for images, labels in val_ds:
-    preds = model.predict(images, verbose=0).ravel()
-    y_pred.extend(preds)
-    y_true.extend(labels.numpy())
-
-y_true = np.array(y_true)
-y_pred = np.array(y_pred)
-
-# convert probabilities to binary class
-y_pred_binary = (y_pred > 0.5).astype(int)
-
-# ---------------------------
-# 7. Precision, Recall, F1
-# ---------------------------
-from sklearn.metrics import precision_score, recall_score, f1_score
-
-precision = precision_score(y_true, y_pred_binary)
-recall = recall_score(y_true, y_pred_binary)
-f1 = f1_score(y_true, y_pred_binary)
-
-print("Precision:", precision)
-print("Recall:", recall)
-print("F1 Score:", f1)
-
-# ---------------------------
-# 8. ROC Curve + AUC
-# ---------------------------
-from sklearn.metrics import roc_curve, auc
-import matplotlib.pyplot as plt
-
-fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+# -------------------- ROC CURVE --------------------
+fpr, tpr, _ = roc_curve(y_test, y_proba)
 roc_auc = auc(fpr, tpr)
 
-print("AUC:", roc_auc)
-
-plt.figure(figsize=(6,6))
+plt.figure(figsize=(6, 5))
 plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
 plt.plot([0,1], [0,1], 'k--')
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("ROC Curve")
-plt.legend(loc="lower right")
-plt.grid(True)
+plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title("ROC Curve")
+plt.legend(); plt.grid()
 plt.show()
