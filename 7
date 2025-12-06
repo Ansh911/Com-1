@@ -1,0 +1,96 @@
+# Upload CSV in Google Colab
+from google.colab import files
+uploaded = files.upload()
+
+import pandas as pd
+import io
+
+# Read dataset
+df = pd.read_csv(io.BytesIO(uploaded['heart_attack_prediction_dataset (8).csv']))
+print(df.head())
+
+
+# One-hot encoding only the categorical columns that exist
+df_encoded = pd.get_dummies(df, columns=['sex', 'cp', 'restecg', 'slope', 'thal'])
+
+# Features and Target
+X = df_encoded.drop(['target'], axis=1)
+y = df_encoded['target']
+
+
+# Split dataset
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Logistic Regression
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+from sklearn.metrics import accuracy_score
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print("Logistic Regression Accuracy: {:.2f}%".format(accuracy * 100))
+
+# SVM
+from sklearn.svm import SVC
+svm_model = SVC()
+svm_model.fit(X_train, y_train)
+
+y_pred_svm = svm_model.predict(X_test)
+accuracy_svm = accuracy_score(y_test, y_pred_svm)
+print("SVM Accuracy: {:.2f}%".format(accuracy_svm * 100))
+
+# Decision Tree
+from sklearn.tree import DecisionTreeClassifier
+dt_model = DecisionTreeClassifier(random_state=42)
+dt_model.fit(X_train, y_train)
+
+y_pred_dt = dt_model.predict(X_test)
+accuracy_dt = accuracy_score(y_test, y_pred_dt)
+print("Decision Tree Accuracy: {:.2f}%".format(accuracy_dt * 100))
+
+# Random Forest
+from sklearn.ensemble import RandomForestClassifier
+rf_model = RandomForestClassifier(random_state=42)
+rf_model.fit(X_train, y_train)
+
+y_pred_rf = rf_model.predict(X_test)
+accuracy_rf = accuracy_score(y_test, y_pred_rf)
+print("Random Forest Accuracy: {:.2f}%".format(accuracy_rf * 100))
+
+# KNN
+from sklearn.neighbors import KNeighborsClassifier
+knn_model = KNeighborsClassifier(n_neighbors=5)
+knn_model.fit(X_train, y_train)
+
+y_pred_knn = knn_model.predict(X_test)
+accuracy_knn = accuracy_score(y_test, y_pred_knn)
+print("KNN Accuracy: {:.2f}%".format(accuracy_knn * 100))
+
+# Naive Bayes
+from sklearn.naive_bayes import GaussianNB
+nb_model = GaussianNB()
+nb_model.fit(X_train, y_train)
+
+y_pred_nb = nb_model.predict(X_test)
+accuracy_nb = accuracy_score(y_test, y_pred_nb)
+print("Naive Bayes Accuracy: {:.2f}%".format(accuracy_nb * 100))
+
+# Compare accuracies
+accuracy_scores = {
+    'Logistic Regression': accuracy,
+    'SVM': accuracy_svm,
+    'Decision Tree': accuracy_dt,
+    'Random Forest': accuracy_rf,
+    'KNN': accuracy_knn,
+    'Naive Bayes': accuracy_nb
+}
+
+accuracy_df = pd.DataFrame.from_dict(
+    accuracy_scores, orient='index', columns=['Accuracy']
+)
+
+display(accuracy_df)
