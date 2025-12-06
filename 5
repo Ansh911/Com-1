@@ -1,0 +1,46 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import mean_squared_error, accuracy_score, confusion_matrix
+
+# Logistic regression dataset
+from sklearn.datasets import make_classification
+
+X_log, y_log = make_classification(
+    n_samples=100,
+    n_features=2,
+    n_redundant=0,
+    n_informative=2,
+    random_state=0,
+    n_clusters_per_class=1
+)
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X_log, y_log, test_size=0.2, random_state=0
+)
+
+# Train model
+log_reg = LogisticRegression()
+log_reg.fit(X_train, y_train)
+
+# Predict
+y_pred = log_reg.predict(X_test)
+
+# Evaluate
+acc = accuracy_score(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred)
+
+print("Accuracy:", acc)
+print("Confusion Matrix:\n", cm)
+
+# Plot
+plt.figure()
+plt.scatter(X_log[:, 0], X_log[:, 1], c=y_log, cmap='bwr')
+plt.title("Logistic Regression Dataset")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.show()
