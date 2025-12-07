@@ -1,76 +1,57 @@
 import cv2
-import numpy as np
+import urllib.request
 import matplotlib.pyplot as plt
-from google.colab import files
 
-# STEP 2: Upload your image
+# Load image from internet (works everywhere)
+url = "https://scoop-cms.s3-eu-west-1.amazonaws.com/55e853c7ca2f3a596c8b4568/reshot-min.jpg"
+urllib.request.urlretrieve(url, "image.jpg")
 
-uploaded = files.upload()   # choose an image from your computer
-img_path = list(uploaded.keys())[0]
+img = cv2.imread("image.jpg")         # BGR
+rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-# STEP 3: Read the image (OpenCV loads in BGR)
+plt.figure(figsize=(12,10))
 
-bgr = cv2.imread(img_path)
-
-# Convert into different color spaces
-
-rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-
-# STEP 4: Show images
-
-plt.figure(figsize=(14,5))
-plt.subplot(1,3,1)
+# ---------------- Images ----------------
+plt.subplot(3,3,1)
 plt.imshow(rgb)
-plt.title("RGB")
+plt.title("Original Image")
 plt.axis("off")
 
-plt.subplot(1,3,2)
-plt.imshow(cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB))
-plt.title("HSV (visualized)")
+plt.subplot(3,3,2)
+plt.imshow(rgb)
+plt.title("RGB Image")
 plt.axis("off")
 
-plt.subplot(1,3,3)
+plt.subplot(3,3,3)
+plt.imshow(hsv)
+plt.title("HSV Image")
+plt.axis("off")
+
+plt.subplot(3,3,4)
 plt.imshow(gray, cmap="gray")
-plt.title("Grayscale")
+plt.title("Grayscale Image")
 plt.axis("off")
 
-plt.show()
-
-# STEP 5: Plot histograms
-
-plt.figure(figsize=(7,5))
-colors = ('r','g','b')
-for i,c in enumerate(colors):
-    hist = cv2.calcHist([rgb],[i],None,[256],[0,256])
-    plt.plot(hist, color=c, label=f"{c.upper()}")
+# ---------------- RGB Histogram ----------------
+plt.subplot(3,3,5)
+for i, col in enumerate(['r','g','b']):
+    plt.hist(rgb[:,:,i].ravel(), 256, alpha=0.5, label=col)
 plt.title("RGB Histogram")
-plt.xlabel("Intensity")
-plt.ylabel("Pixels")
 plt.legend()
-plt.show()
 
-# --- HSV histogram ---
-titles = ["Hue","Saturation","Value"]
-bins = [180,256,256]
-ranges = [(0,180),(0,256),(0,256)]
+# ---------------- HSV Histogram ----------------
+plt.subplot(3,3,6)
+for i, col in enumerate(['h','s','v']):
+    plt.hist(hsv[:,:,i].ravel(), 256, alpha=0.5, label=col)
+plt.title("HSV Histogram")
+plt.legend()
 
-plt.figure(figsize=(14,4))
-for i in range(3):
-    plt.subplot(1,3,i+1)
-    hist = cv2.calcHist([hsv],[i],None,[bins[i]],[*ranges[i]])
-    plt.plot(hist)
-    plt.title(f"HSV: {titles[i]}")
-    plt.xlabel("Intensity")
-    plt.ylabel("Pixels")
-plt.show()
-
-# --- Grayscale histogram ---
-plt.figure(figsize=(7,5))
-gray_hist = cv2.calcHist([gray],[0],None,[256],[0,256])
-plt.plot(gray_hist)
+# ---------------- Grayscale Histogram ----------------
+plt.subplot(3,3,7)
+plt.hist(gray.ravel(), 256, color='grey')
 plt.title("Grayscale Histogram")
-plt.xlabel("Intensity")
-plt.ylabel("Pixels")
+
+plt.tight_layout()
 plt.show()
