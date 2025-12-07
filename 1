@@ -1,51 +1,92 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
-# Sample salary data
+# -------------------------------
+# 1. Create Salary Dataset (with missing values)
+# -------------------------------
+
 data = {
-    "Employee": ["A", "B", "C", "D", "E"],
-    "Salary": [30000, 45000, None, 50000, 35000]
+    "Employee": ["A", "B", "C", "D", "E", "F"],
+    "Salary": [45000, 52000, np.nan, 61000, 57000, 49000],
+    "Experience": [2, 3, np.nan, 5, 4, 2]
 }
 
 df = pd.DataFrame(data)
+print("Dataset:\n", df)
 
-# ---- Step 1: Missing Value Detection ----
-print("Missing Values:\n", df.isnull().sum())
+# -------------------------------
+# 2. Missing Value Detection
+# -------------------------------
+print("\nMissing Values:\n", df.isnull().sum())
 
-# ---- Step 2: Resolve Missing Values (Fill with Mean) ----
-mean_salary = df["Salary"].mean()     # this ignores None automatically
-df["Salary"].fillna(mean_salary, inplace=True)
+# -------------------------------
+# 3. Mean Salary (ignores NaN)
+# -------------------------------
+mean_salary = df["Salary"].mean()
+print("\nMean Salary:", mean_salary)
 
-print("\nAfter filling missing value with mean:",df["Salary"].mean())
+# -----------------------------------------
+# Before plotting → fill missing values only for graphs
+# -----------------------------------------
+plot_df = df.copy()
 
-# ---- Step 3: Now make graphs with NEW filled value ----
+# Fill missing values with column mean
+plot_df["Salary"] = plot_df["Salary"].fillna(plot_df["Salary"].mean())
+plot_df["Experience"] = plot_df["Experience"].fillna(plot_df["Experience"].mean())
 
-# Histogram
-plt.hist(df["Salary"])
-plt.title("Salary Histogram (After Filling Missing Value)")
+# -----------------------------------------
+# 4. HISTOGRAM
+# -----------------------------------------
+plt.figure(figsize=(6,4))
+plt.hist(plot_df["Salary"], bins=5, edgecolor="black")
+plt.title("Salary Histogram")
+plt.xlabel("Salary")
+plt.ylabel("Frequency")
 plt.show()
 
-# Bar Plot
-plt.bar(df["Employee"], df["Salary"])
-plt.title("Salary Bar Chart (Updated Data)")
+# -----------------------------------------
+# 5. BAR PLOT
+# -----------------------------------------
+plt.figure(figsize=(6,4))
+plt.bar(plot_df["Employee"], plot_df["Salary"], edgecolor="black")
+plt.title("Employee vs Salary")
+plt.xlabel("Employee")
+plt.ylabel("Salary")
 plt.show()
 
-# Subplots
-plt.figure(figsize=(8,4))
+# -----------------------------------------
+# 6. SCATTER PLOT
+# -----------------------------------------
+plt.figure(figsize=(6,4))
+plt.scatter(plot_df["Experience"], plot_df["Salary"])
+plt.title("Experience vs Salary")
+plt.xlabel("Experience")
+plt.ylabel("Salary")
+plt.show()
 
-plt.subplot(1,2,1)
-plt.hist(df["Salary"])
-plt.title("Histogram")
+plt.figure(figsize=(8,6))
+plt.plot(plot_df["Employee"], plot_df["Salary"])  # Uses Employee names on x-axis; markers highlight points
+plt.title("Employee Salaries (Line Plot)")
+plt.xlabel("Employee")
+plt.ylabel("Salary")
+plt.grid(True, alpha=0.3)  # Adds subtle grid for readability
+plt.xticks(rotation=0)  # Keeps labels horizontal
+plt.tight_layout()
+plt.show()
+# -----------------------------------------
+# 7. SUBPLOTS (3 graphs)
+# -----------------------------------------
+fig, axs = plt.subplots(3, 1, figsize=(7,10))
 
-plt.subplot(1,2,2)
-plt.bar(df["Employee"], df["Salary"])
-plt.title("Bar Chart")
+axs[0].hist(plot_df["Salary"], bins=5, edgecolor="black")
+axs[0].set_title("Salary Histogram")
+
+axs[1].bar(plot_df["Employee"], plot_df["Salary"], edgecolor="black")
+axs[1].set_title("Employee vs Salary")
+
+axs[2].scatter(plot_df["Experience"], plot_df["Salary"])
+axs[2].set_title("Experience vs Salary")
 
 plt.tight_layout()
 plt.show()
-
-# Scatter Plot
-plt.scatter(df["Employee"], df["Salary"])
-plt.title("Salary Scatter Plot (Updated Data)")
-plt.show()
-
